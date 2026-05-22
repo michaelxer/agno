@@ -68,10 +68,7 @@ class FilesystemContextProvider(ContextProvider):
                 "(glob) / `search_content` (text search) / `read_file` / `read_file_chunk`. "
                 "Paths are relative to the root."
             )
-        return (
-            f"`{self.name}`: call `{self.query_tool_name}(question)` — files under {self.root}. "
-            "Search by name, path pattern, or content."
-        )
+        return f"`{self.name}`: call `{self.query_tool_name}(question)` to query files under {self.root}."
 
     # ------------------------------------------------------------------
     # Mode resolution

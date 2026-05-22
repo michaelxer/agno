@@ -76,8 +76,9 @@ class WorkspaceContextProvider(ContextProvider):
                 "are excluded."
             )
         return (
-            f"`{self.name}`: call `{self.query_tool_name}(question)` — code, configs, and docs under {self.root}. "
-            "Search by filename, symbol, or content pattern."
+            f"`{self.name}`: call `{self.query_tool_name}(question)` to inspect project "
+            f"files under {self.root}. Common dependency, build, and agent scratch folders "
+            "are excluded."
         )
 
     # ------------------------------------------------------------------

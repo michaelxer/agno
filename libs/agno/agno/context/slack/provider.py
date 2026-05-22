@@ -111,13 +111,10 @@ class SlackContextProvider(ContextProvider):
                 "to resolve names. Pass channel names like `#agents` directly."
             )
         if self.mode == ContextMode.agent:
-            return (
-                f"`{self.name}`: call `{self.query_tool_name}(question)` — team discussions, decisions, context. "
-                "Ask about topics, channels, or recent activity."
-            )
+            return f"`{self.name}`: call `{self.query_tool_name}(question)` to read Slack."
         return (
-            f"`{self.name}`: call `{self.query_tool_name}(question)` — team discussions, decisions, context. "
-            f"`{self.update_tool_name}(instruction)` to post messages."
+            f"`{self.name}`: call `{self.query_tool_name}(question)` to read Slack. "
+            f"Use `{self.update_tool_name}(instruction)` to post a message."
         )
 
     # ------------------------------------------------------------------

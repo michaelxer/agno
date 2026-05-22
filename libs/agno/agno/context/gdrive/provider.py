@@ -115,8 +115,8 @@ class GoogleDriveContextProvider(ContextProvider):
                 "with other providers — mode=tools only works in isolation."
             )
         return (
-            f"`{self.name}`: call `{self.query_tool_name}(question)` — Google Drive. "
-            "Search for docs, specs, spreadsheets, or policies by topic or title."
+            f"`{self.name}`: call `{self.query_tool_name}(question)` to query Google Drive — "
+            "searches by name, mimeType, modifiedTime, etc., and returns matches with webViewLinks."
         )
 
     # ------------------------------------------------------------------
