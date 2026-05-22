@@ -862,7 +862,7 @@ class Model(ABC):
             if self.cache_response:
                 self._save_model_response_to_cache(cache_key, model_response, is_streaming=False)
         finally:
-            pass  # Httpx is thread-safe, per-response cleanup causes race (#7427)
+            pass  # Cleanup removed, caused thread race (#7427)
 
         return model_response
 
@@ -1074,7 +1074,7 @@ class Model(ABC):
             if self.cache_response:
                 self._save_model_response_to_cache(cache_key, model_response, is_streaming=False)
         finally:
-            pass  # Httpx is thread-safe, per-response cleanup causes race (#7427)
+            pass  # Cleanup removed, caused thread race (#7427)
 
         return model_response
 
@@ -1568,7 +1568,7 @@ class Model(ABC):
             if self.cache_response and cache_key and streaming_responses:
                 self._save_streaming_responses_to_cache(cache_key, streaming_responses)
         finally:
-            pass  # Httpx is thread-safe, per-response cleanup causes race (#7427)
+            pass  # Cleanup removed, caused thread race (#7427)
 
     async def aprocess_response_stream(
         self,
@@ -1836,7 +1836,7 @@ class Model(ABC):
                 self._save_streaming_responses_to_cache(cache_key, streaming_responses)
 
         finally:
-            pass  # Httpx is thread-safe, per-response cleanup causes race (#7427)
+            pass  # Cleanup removed, caused thread race (#7427)
 
     def _populate_assistant_message_from_stream_data(
         self, assistant_message: Message, stream_data: MessageData
