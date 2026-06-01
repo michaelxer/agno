@@ -23,6 +23,7 @@ from fastapi.responses import StreamingResponse
 from agno.agent import Agent, RemoteAgent
 from agno.os.interfaces.agui.utils import (
     async_stream_agno_response_as_agui_events,
+    extract_agui_context,
     extract_agui_user_input,
     validate_agui_state,
 )
@@ -49,6 +50,20 @@ async def run_agent(agent: Union[Agent, RemoteAgent], run_input: RunAgentInput) 
         # Validating the session state is of the expected type (dict)
         session_state = validate_agui_state(run_input.state, run_input.thread_id)
 
+        # Inject AG-UI readable context via dependencies (per-call, never
+        # persisted) so we don't pollute user-managed session_state. Merged
+        # with any agent.dependencies the user already set, then surfaced to
+        # the model via add_dependencies_to_context=True. This renders into
+        # the user message, which is fresh every turn — no stale-context bleed
+        # on reasoning-model multi-turn conversations.
+        agui_ctx = extract_agui_context(run_input.context)
+        run_kwargs: dict = {}
+        if agui_ctx:
+            base_deps = dict(getattr(agent, "dependencies", None) or {})
+            base_deps["agui_context"] = agui_ctx
+            run_kwargs["dependencies"] = base_deps
+            run_kwargs["add_dependencies_to_context"] = True
+
         # Request streaming response from agent
         response_stream = agent.arun(  # type: ignore
             input=user_input,
@@ -58,6 +73,7 @@ async def run_agent(agent: Union[Agent, RemoteAgent], run_input: RunAgentInput) 
             user_id=user_id,
             session_state=session_state,
             run_id=run_id,
+            **run_kwargs,
         )
 
         # Stream the response content in AG-UI format
@@ -91,6 +107,20 @@ async def run_team(team: Union[Team, RemoteTeam], input: RunAgentInput) -> Async
         # Validating the session state is of the expected type (dict)
         session_state = validate_agui_state(input.state, input.thread_id)
 
+        # Inject AG-UI readable context via dependencies (per-call, never
+        # persisted) so we don't pollute user-managed session_state. Merged
+        # with any team.dependencies the user already set, then surfaced to
+        # the model via add_dependencies_to_context=True. This renders into
+        # the user message, which is fresh every turn — no stale-context bleed
+        # on reasoning-model multi-turn conversations.
+        agui_ctx = extract_agui_context(input.context)
+        run_kwargs: dict = {}
+        if agui_ctx:
+            base_deps = dict(getattr(team, "dependencies", None) or {})
+            base_deps["agui_context"] = agui_ctx
+            run_kwargs["dependencies"] = base_deps
+            run_kwargs["add_dependencies_to_context"] = True
+
         # Request streaming response from team
         response_stream = team.arun(  # type: ignore
             input=user_input,
@@ -100,6 +130,7 @@ async def run_team(team: Union[Team, RemoteTeam], input: RunAgentInput) -> Async
             user_id=user_id,
             session_state=session_state,
             run_id=run_id,
+            **run_kwargs,
         )
 
         # Stream the response content in AG-UI format
