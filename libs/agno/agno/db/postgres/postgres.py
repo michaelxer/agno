@@ -1,3 +1,4 @@
+import threading
 import time
 from datetime import date, datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
@@ -160,6 +161,24 @@ class PostgresDb(BaseDb):
         self.db_schema: str = db_schema if db_schema is not None else "ai"
         self.metadata: MetaData = MetaData(schema=self.db_schema)
         self.create_schema: bool = create_schema
+        self._table_lock = threading.RLock()
+
+        self.session_table: Optional[Table] = None
+        self.memory_table: Optional[Table] = None
+        self.metrics_table: Optional[Table] = None
+        self.eval_table: Optional[Table] = None
+        self.knowledge_table: Optional[Table] = None
+        self.culture_table: Optional[Table] = None
+        self.versions_table: Optional[Table] = None
+        self.traces_table: Optional[Table] = None
+        self.spans_table: Optional[Table] = None
+        self.component_table: Optional[Table] = None
+        self.component_configs_table: Optional[Table] = None
+        self.component_links_table: Optional[Table] = None
+        self.learnings_table: Optional[Table] = None
+        self.schedules_table: Optional[Table] = None
+        self.schedule_runs_table: Optional[Table] = None
+        self.approvals_table: Optional[Table] = None
 
         # Initialize database session
         self.Session: scoped_session = scoped_session(sessionmaker(bind=self.db_engine, expire_on_commit=False))
@@ -450,136 +469,153 @@ class PostgresDb(BaseDb):
         return table_map.get(logical_name, logical_name)
 
     def _get_table(self, table_type: str, create_table_if_not_found: Optional[bool] = False) -> Optional[Table]:
-        if table_type == "sessions":
-            self.session_table = self._get_or_create_table(
-                table_name=self.session_table_name,
-                table_type="sessions",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.session_table
+        with self._table_lock:
+            if table_type == "sessions":
+                if self.session_table is None:
+                    self.session_table = self._get_or_create_table(
+                        table_name=self.session_table_name,
+                        table_type="sessions",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.session_table
 
-        if table_type == "memories":
-            self.memory_table = self._get_or_create_table(
-                table_name=self.memory_table_name,
-                table_type="memories",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.memory_table
+            if table_type == "memories":
+                if self.memory_table is None:
+                    self.memory_table = self._get_or_create_table(
+                        table_name=self.memory_table_name,
+                        table_type="memories",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.memory_table
 
-        if table_type == "metrics":
-            self.metrics_table = self._get_or_create_table(
-                table_name=self.metrics_table_name,
-                table_type="metrics",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.metrics_table
+            if table_type == "metrics":
+                if self.metrics_table is None:
+                    self.metrics_table = self._get_or_create_table(
+                        table_name=self.metrics_table_name,
+                        table_type="metrics",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.metrics_table
 
-        if table_type == "evals":
-            self.eval_table = self._get_or_create_table(
-                table_name=self.eval_table_name,
-                table_type="evals",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.eval_table
+            if table_type == "evals":
+                if self.eval_table is None:
+                    self.eval_table = self._get_or_create_table(
+                        table_name=self.eval_table_name,
+                        table_type="evals",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.eval_table
 
-        if table_type == "knowledge":
-            self.knowledge_table = self._get_or_create_table(
-                table_name=self.knowledge_table_name,
-                table_type="knowledge",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.knowledge_table
+            if table_type == "knowledge":
+                if self.knowledge_table is None:
+                    self.knowledge_table = self._get_or_create_table(
+                        table_name=self.knowledge_table_name,
+                        table_type="knowledge",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.knowledge_table
 
-        if table_type == "culture":
-            self.culture_table = self._get_or_create_table(
-                table_name=self.culture_table_name,
-                table_type="culture",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.culture_table
+            if table_type == "culture":
+                if self.culture_table is None:
+                    self.culture_table = self._get_or_create_table(
+                        table_name=self.culture_table_name,
+                        table_type="culture",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.culture_table
 
-        if table_type == "versions":
-            self.versions_table = self._get_or_create_table(
-                table_name=self.versions_table_name,
-                table_type="versions",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.versions_table
+            if table_type == "versions":
+                if self.versions_table is None:
+                    self.versions_table = self._get_or_create_table(
+                        table_name=self.versions_table_name,
+                        table_type="versions",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.versions_table
 
-        if table_type == "traces":
-            self.traces_table = self._get_or_create_table(
-                table_name=self.trace_table_name,
-                table_type="traces",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.traces_table
+            if table_type == "traces":
+                if self.traces_table is None:
+                    self.traces_table = self._get_or_create_table(
+                        table_name=self.trace_table_name,
+                        table_type="traces",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.traces_table
 
-        if table_type == "spans":
-            # Ensure traces table exists first (spans has FK to traces)
-            if create_table_if_not_found:
-                self._get_table(table_type="traces", create_table_if_not_found=True)
+            if table_type == "spans":
+                # Ensure traces table exists first (spans has FK to traces)
+                if create_table_if_not_found:
+                    self._get_table(table_type="traces", create_table_if_not_found=True)
 
-            self.spans_table = self._get_or_create_table(
-                table_name=self.span_table_name,
-                table_type="spans",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.spans_table
+                if self.spans_table is None:
+                    self.spans_table = self._get_or_create_table(
+                        table_name=self.span_table_name,
+                        table_type="spans",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.spans_table
 
-        if table_type == "components":
-            self.component_table = self._get_or_create_table(
-                table_name=self.components_table_name,
-                table_type="components",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.component_table
+            if table_type == "components":
+                if self.component_table is None:
+                    self.component_table = self._get_or_create_table(
+                        table_name=self.components_table_name,
+                        table_type="components",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.component_table
 
-        if table_type == "component_configs":
-            self.component_configs_table = self._get_or_create_table(
-                table_name=self.component_configs_table_name,
-                table_type="component_configs",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.component_configs_table
+            if table_type == "component_configs":
+                if self.component_configs_table is None:
+                    self.component_configs_table = self._get_or_create_table(
+                        table_name=self.component_configs_table_name,
+                        table_type="component_configs",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.component_configs_table
 
-        if table_type == "component_links":
-            self.component_links_table = self._get_or_create_table(
-                table_name=self.component_links_table_name,
-                table_type="component_links",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.component_links_table
-        if table_type == "learnings":
-            self.learnings_table = self._get_or_create_table(
-                table_name=self.learnings_table_name,
-                table_type="learnings",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.learnings_table
+            if table_type == "component_links":
+                if self.component_links_table is None:
+                    self.component_links_table = self._get_or_create_table(
+                        table_name=self.component_links_table_name,
+                        table_type="component_links",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.component_links_table
+            if table_type == "learnings":
+                if self.learnings_table is None:
+                    self.learnings_table = self._get_or_create_table(
+                        table_name=self.learnings_table_name,
+                        table_type="learnings",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.learnings_table
 
-        if table_type == "schedules":
-            self.schedules_table = self._get_or_create_table(
-                table_name=self.schedules_table_name,
-                table_type="schedules",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.schedules_table
+            if table_type == "schedules":
+                if self.schedules_table is None:
+                    self.schedules_table = self._get_or_create_table(
+                        table_name=self.schedules_table_name,
+                        table_type="schedules",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.schedules_table
 
-        if table_type == "schedule_runs":
-            self.schedule_runs_table = self._get_or_create_table(
-                table_name=self.schedule_runs_table_name,
-                table_type="schedule_runs",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.schedule_runs_table
+            if table_type == "schedule_runs":
+                if self.schedule_runs_table is None:
+                    self.schedule_runs_table = self._get_or_create_table(
+                        table_name=self.schedule_runs_table_name,
+                        table_type="schedule_runs",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.schedule_runs_table
 
-        if table_type == "approvals":
-            self.approvals_table = self._get_or_create_table(
-                table_name=self.approvals_table_name,
-                table_type="approvals",
-                create_table_if_not_found=create_table_if_not_found,
-            )
-            return self.approvals_table
+            if table_type == "approvals":
+                if self.approvals_table is None:
+                    self.approvals_table = self._get_or_create_table(
+                        table_name=self.approvals_table_name,
+                        table_type="approvals",
+                        create_table_if_not_found=create_table_if_not_found,
+                    )
+                return self.approvals_table
 
         raise ValueError(f"Unknown table type: {table_type}")
 

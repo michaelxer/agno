@@ -1,3 +1,6 @@
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import Mock, patch
 
 import pytest
@@ -300,6 +303,31 @@ def test_get_table_knowledge(postgres_db):
 
     assert table == mock_table
     assert hasattr(postgres_db, "knowledge_table")
+
+
+def test_get_table_thread_safe_first_materialization(postgres_db):
+    """Test concurrent first lookup only materializes the table once."""
+    mock_table = Mock(spec=Table)
+    start_barrier = threading.Barrier(2)
+
+    def get_table():
+        start_barrier.wait(timeout=1)
+        return postgres_db._get_table("sessions")
+
+    def get_or_create_table(*args, **kwargs):
+        time.sleep(0.05)
+        return mock_table
+
+    with patch.object(postgres_db, "_get_or_create_table", side_effect=get_or_create_table) as mock_get_or_create:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(lambda _: get_table(), range(2)))
+
+    assert results == [mock_table, mock_table]
+    mock_get_or_create.assert_called_once_with(
+        table_name=postgres_db.session_table_name,
+        table_type="sessions",
+        create_table_if_not_found=False,
+    )
 
 
 def test_get_table_invalid_type(postgres_db):
